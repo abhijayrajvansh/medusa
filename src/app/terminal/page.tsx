@@ -268,8 +268,8 @@ export default function TerminalPage() {
   }, [router]);
 
   return (
-    <div className="grid h-svh grid-rows-[auto_1fr] overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-700/60">
+    <div className="h-svh overflow-hidden">
+      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b border-neutral-700/60 bg-neutral-900">
         <div>
           <strong>Status:</strong> {status}
         </div>
@@ -295,7 +295,7 @@ export default function TerminalPage() {
           Disconnect
         </button>
       </div>
-      <div className="h-full overflow-hidden" ref={containerRef} />
+      <div className="h-full overflow-auto pt-0" ref={containerRef} />
       <AssistiveTouch onSendSeq={sendSeq} onFocusXterm={focusXtermSoon} />
       <ConfirmReloadDialog
         open={confirmOpen}
