@@ -95,24 +95,66 @@ wss.on('connection', (ws) => {
       ws.send(JSON.stringify({ type: 'test-progress', message: 'Connecting to SSH server...' }));
       
       const testSsh = new Client();
-      testSsh.on('ready', () => {
-        ws.send(JSON.stringify({ type: 'test-progress', message: 'Authentication successful!' }));
-        // Close the test connection immediately
-        testSsh.end();
-        ws.send(JSON.stringify({ type: 'test-success' }));
-      }).on('error', (err) => {
-        let errorMessage = String(err?.message || err);
-        // Make error messages more user-friendly
-        if (errorMessage.includes('ENOTFOUND')) {
-          errorMessage = 'Host not found. Please check the hostname/IP address.';
-        } else if (errorMessage.includes('ECONNREFUSED')) {
-          errorMessage = 'Connection refused. Please check the host and port.';
-        } else if (errorMessage.includes('ETIMEDOUT')) {
-          errorMessage = 'Connection timed out. Please check network connectivity.';
-        } else if (errorMessage.includes('Authentication')) {
-          errorMessage = 'Authentication failed. Please check your credentials.';
+      let isCompleted = false;
+      
+      // Set a timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        if (!isCompleted) {
+          isCompleted = true;
+          testSsh.end();
+          ws.send(JSON.stringify({ 
+            type: 'test-error', 
+            error: 'Connection timeout. Authentication took too long - likely incorrect credentials.' 
+          }));
         }
-        ws.send(JSON.stringify({ type: 'test-error', error: errorMessage }));
+      }, 10000); // 10 second timeout
+      
+      testSsh.on('ready', () => {
+        if (!isCompleted) {
+          isCompleted = true;
+          clearTimeout(timeout);
+          ws.send(JSON.stringify({ type: 'test-progress', message: 'Authentication successful!' }));
+          // Close the test connection immediately
+          testSsh.end();
+          ws.send(JSON.stringify({ type: 'test-success' }));
+        }
+      }).on('error', (err) => {
+        if (!isCompleted) {
+          isCompleted = true;
+          clearTimeout(timeout);
+          let errorMessage = String(err?.message || err);
+          // Make error messages more user-friendly
+          if (errorMessage.includes('ENOTFOUND')) {
+            errorMessage = 'Host not found. Please check the hostname/IP address.';
+          } else if (errorMessage.includes('ECONNREFUSED')) {
+            errorMessage = 'Connection refused. Please check the host and port.';
+          } else if (errorMessage.includes('ETIMEDOUT')) {
+            errorMessage = 'Connection timed out. Please check network connectivity.';
+          } else if (errorMessage.includes('Authentication') || errorMessage.includes('All configured authentication methods failed')) {
+            errorMessage = 'Authentication failed. Please check your username and password.';
+          } else if (errorMessage.includes('Handshake failed') || errorMessage.includes('Protocol error')) {
+            errorMessage = 'SSH handshake failed. Please verify the host supports SSH.';
+          }
+          ws.send(JSON.stringify({ type: 'test-error', error: errorMessage }));
+        }
+      }).on('end', () => {
+        if (!isCompleted) {
+          isCompleted = true;
+          clearTimeout(timeout);
+          ws.send(JSON.stringify({ 
+            type: 'test-error', 
+            error: 'Connection ended unexpectedly. Please check your credentials.' 
+          }));
+        }
+      }).on('close', () => {
+        if (!isCompleted) {
+          isCompleted = true;
+          clearTimeout(timeout);
+          ws.send(JSON.stringify({ 
+            type: 'test-error', 
+            error: 'Connection closed. Authentication may have failed.' 
+          }));
+        }
       }).connect({
         host: config.host,
         port: Number(config.port) || 22,
@@ -120,8 +162,8 @@ wss.on('connection', (ws) => {
         password: config.authMethod === 'password' ? config.password : undefined,
         privateKey: config.authMethod === 'key' ? config.privateKey : undefined,
         passphrase: config.authMethod === 'key' ? config.passphrase : undefined,
-        tryKeyboard: true,
-        readyTimeout: 15000,
+        tryKeyboard: false, // Disable interactive keyboard auth for testing
+        readyTimeout: 8000, // Shorter timeout for testing
       });
     } else if (msg.type === 'input') {
       if (shellStream) shellStream.write(msg.data);

@@ -54,6 +54,17 @@ export default function HomePage() {
       const wsUrl = explicit || `${proto}://${wsHost}:${wsPort}${path}`;
       
       const ws = new WebSocket(wsUrl);
+      let clientTimeout: NodeJS.Timeout;
+      
+      // Timeout after 15 seconds (slightly longer than server timeout)
+      clientTimeout = setTimeout(() => {
+        if (connecting) {
+          setConnecting(false);
+          setConnectionStatus('');
+          setErrorMsg('Connection timeout - please check your credentials and try again');
+          ws.close();
+        }
+      }, 15000);
       
       ws.addEventListener('open', () => {
         setConnectionStatus('Connected to server. Testing SSH credentials...');
@@ -68,12 +79,14 @@ export default function HomePage() {
           const msg = JSON.parse(ev.data);
           
           if (msg.type === 'test-success') {
+            clearTimeout(clientTimeout);
             setConnectionStatus('Authentication successful! Redirecting...');
             sessionStorage.setItem('sshConfig', JSON.stringify(config));
             setTimeout(() => {
               router.push('/terminal');
             }, 500);
           } else if (msg.type === 'test-error') {
+            clearTimeout(clientTimeout);
             setConnecting(false);
             setConnectionStatus('');
             setErrorMsg(msg.error || 'Authentication failed');
@@ -82,6 +95,7 @@ export default function HomePage() {
             setConnectionStatus(msg.message || 'Testing connection...');
           }
         } catch (error) {
+          clearTimeout(clientTimeout);
           setConnecting(false);
           setConnectionStatus('');
           setErrorMsg('Failed to parse server response');
@@ -90,6 +104,7 @@ export default function HomePage() {
       });
 
       ws.addEventListener('close', () => {
+        clearTimeout(clientTimeout);
         if (connecting) {
           setConnecting(false);
           setConnectionStatus('');
@@ -100,20 +115,11 @@ export default function HomePage() {
       });
 
       ws.addEventListener('error', () => {
+        clearTimeout(clientTimeout);
         setConnecting(false);
         setConnectionStatus('');
         setErrorMsg('Failed to connect to WebSocket server');
       });
-
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        if (connecting) {
-          setConnecting(false);
-          setConnectionStatus('');
-          setErrorMsg('Connection timeout');
-          ws.close();
-        }
-      }, 30000);
 
     } catch (error) {
       setConnecting(false);
