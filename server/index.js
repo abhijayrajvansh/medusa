@@ -16,10 +16,25 @@ function log(...args) {
   if (process.env.DEBUG) console.log('[WS]', ...args);
 }
 
+const HEARTBEAT_INTERVAL_MS = process.env.WS_HEARTBEAT_INTERVAL_MS
+  ? Number(process.env.WS_HEARTBEAT_INTERVAL_MS)
+  : 30000;
+
 wss.on('connection', (ws) => {
   log('client connected');
   let ssh; // ssh2 Client
   let shellStream; // interactive shell stream
+
+  // Heartbeat: regularly ping client so browsers/NATs/proxies keep the socket alive
+  // Browsers automatically reply with a Pong; we don't need to handle it explicitly
+  let hb;
+  try {
+    hb = setInterval(() => {
+      if (ws.readyState === ws.OPEN) {
+        try { ws.ping(); } catch {}
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+  } catch {}
 
   ws.on('message', async (raw) => {
     let msg;
@@ -66,6 +81,9 @@ wss.on('connection', (ws) => {
         passphrase: config.authMethod === 'key' ? config.passphrase : undefined,
         tryKeyboard: true,
         readyTimeout: 20000,
+        // Keep the SSH connection alive during inactivity
+        keepaliveInterval: Number(process.env.SSH_KEEPALIVE_INTERVAL_MS || 15000),
+        keepaliveCountMax: Number(process.env.SSH_KEEPALIVE_COUNT_MAX || 10),
       });
     } else if (msg.type === 'input') {
       if (shellStream) shellStream.write(msg.data);
@@ -80,10 +98,10 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    if (hb) try { clearInterval(hb); } catch {}
     if (shellStream) try { shellStream.close(); } catch {}
     if (ssh) try { ssh.end(); } catch {}
   });
 });
 
 server.listen(PORT, () => console.log(`WS SSH server listening on :${PORT}`));
-
