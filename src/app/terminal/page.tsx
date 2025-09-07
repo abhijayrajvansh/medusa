@@ -268,7 +268,7 @@ export default function TerminalPage() {
   }, [router]);
 
   return (
-    <div className="h-svh overflow-hidden">
+    <div className="h-[90vh] overflow-hidden">
       <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b border-neutral-700/60 bg-neutral-900">
         <div>
           <strong>Status:</strong> {status}
