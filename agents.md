@@ -1,5 +1,9 @@
 # Agents — Must-Follow Follow-Ups After Every Code Change
 
-1. You always commit the changes with this format docs: added instruction how to commit or update: new ui changes or fix: authentication errors.
-2. You always push the changes to the origin of the current branch
+1. Type check after each change: run `pnpm exec tsc --noEmit` and resolve any type errors before committing.
+2. Commit message format: use one of `docs: ...`, `update: ...`, or `fix: ...` depending on the change.
+3. Push after commit: always push the changes to `origin` on the current branch.
 
+Notes
+- `pnpm exec tsc --noEmit` performs a fast, project-wide TypeScript type check without emitting files.
+- Do not skip type checking; only proceed to commit/push when the type check passes.
