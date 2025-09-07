@@ -7,9 +7,9 @@ type AuthMethod = 'password' | 'key';
 
 export default function HomePage() {
   const router = useRouter();
-  const [host, setHost] = useState('');
+  const [host, setHost] = useState('192.168.29.161');
   const [port, setPort] = useState(22);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('abhijayrajvansh');
   const [authMethod, setAuthMethod] = useState<AuthMethod>('password');
   const [password, setPassword] = useState('');
   const [privateKey, setPrivateKey] = useState('');

@@ -199,12 +199,6 @@ export default function TerminalPage() {
         <strong>Status:</strong> {status}
       </div>
       <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-700/60">
-        <button type="button" className="px-3 py-1 rounded-md border border-neutral-700 bg-neutral-800 hover:bg-neutral-700" onClick={() => wsRef.current?.send(JSON.stringify({ type: 'input', data: '\u001b' }))}>ESC</button>
-        <button type="button" className="px-3 py-1 rounded-md border border-neutral-700 bg-neutral-800 hover:bg-neutral-700" onClick={() => wsRef.current?.send(JSON.stringify({ type: 'input', data: '\t' }))}>TAB</button>
-        <button type="button" className="px-3 py-1 rounded-md border border-neutral-700 bg-neutral-800 hover:bg-neutral-700" onClick={() => wsRef.current?.send(JSON.stringify({ type: 'input', data: '\u0003' }))}>Ctrl+C</button>
-        <button type="button" className="px-3 py-1 rounded-md border border-neutral-700 bg-neutral-800 hover:bg-neutral-700" onClick={() => wsRef.current?.send(JSON.stringify({ type: 'input', data: '\u0004' }))}>Ctrl+D</button>
-        <button type="button" className="px-3 py-1 rounded-md border border-neutral-700 bg-neutral-800 hover:bg-neutral-700" onClick={() => wsRef.current?.send(JSON.stringify({ type: 'input', data: '\u000c' }))}>Ctrl+L</button>
-        <button type="button" className="px-3 py-1 rounded-md border border-neutral-700 bg-neutral-800 hover:bg-neutral-700" onClick={() => wsRef.current?.send(JSON.stringify({ type: 'input', data: '\u001a' }))}>Ctrl+Z</button>
         <span className="grow" />
         <button type="button" className="px-3 py-1 rounded-md border border-red-600 bg-red-500 text-white hover:bg-red-400" onClick={() => setConfirmDisconnectOpen(true)}>Disconnect</button>
       </div>
@@ -238,4 +232,3 @@ export default function TerminalPage() {
     </div>
   );
 }
-
