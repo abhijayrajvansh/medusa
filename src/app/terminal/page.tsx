@@ -5,6 +5,7 @@ import type { Terminal as TerminalType } from 'xterm';
 import type { FitAddon as FitAddonType } from 'xterm-addon-fit';
 import { useRouter } from 'next/navigation';
 import ConfirmReloadDialog from '@/components/ConfirmReloadDialog';
+import AssistiveTouch from '@/components/AssistiveTouch';
 
 export default function TerminalPage() {
   const router = useRouter();
@@ -18,20 +19,23 @@ export default function TerminalPage() {
   const allowUnloadRef = useRef(false);
   const readyRef = useRef(false);
 
-  const sendTab = () => {
-    // Schedule focus so the button click doesn't steal it
+  const focusXtermSoon = () => {
     try {
       if (typeof window !== 'undefined') {
-        // Ensure the app window is active and return focus to xterm after click
         requestAnimationFrame(() => {
           try { termRef.current?.focus?.(); } catch {}
         });
       }
     } catch {}
-    // Send a literal tab to the PTY (same as pressing the Tab key)
-    try {
-      wsRef.current?.send(JSON.stringify({ type: 'input', data: '\t' }));
-    } catch {}
+  };
+
+  const sendSeq = (seq: string) => {
+    try { wsRef.current?.send(JSON.stringify({ type: 'input', data: seq })); } catch {}
+  };
+
+  const sendTab = () => {
+    focusXtermSoon();
+    sendSeq('\t');
   };
 
   const bounceHomeWithError = (message: string) => {
@@ -238,6 +242,7 @@ export default function TerminalPage() {
         </button>
       </div>
       <div className="h-full overflow-hidden" ref={containerRef} />
+      <AssistiveTouch onSendSeq={sendSeq} onFocusXterm={focusXtermSoon} />
       <ConfirmReloadDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
