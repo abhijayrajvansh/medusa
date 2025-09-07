@@ -18,6 +18,16 @@ export default function TerminalPage() {
   const allowUnloadRef = useRef(false);
   const readyRef = useRef(false);
 
+  const sendTab = () => {
+    try {
+      // Ensure terminal retains focus for continued typing
+      termRef.current?.focus?.();
+    } catch {}
+    try {
+      wsRef.current?.send(JSON.stringify({ type: 'input', data: '\t' }));
+    } catch {}
+  };
+
   const bounceHomeWithError = (message: string) => {
     try { sessionStorage.setItem('sshError', message); } catch {}
     try { sessionStorage.removeItem('sshConfig'); } catch {}
@@ -200,6 +210,15 @@ export default function TerminalPage() {
           <strong>Status:</strong> {status}
         </div>
         <span className="grow" />
+        <button
+          type="button"
+          className="px-3 py-1 rounded-md border border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"
+          onClick={sendTab}
+          aria-label="Send Tab to terminal"
+          title="Send Tab"
+        >
+          Tab
+        </button>
         <button
           type="button"
           className="px-3 py-1 rounded-md border border-red-600 bg-red-500 text-white hover:bg-red-400"
