@@ -75,8 +75,8 @@ export default function TerminalPage() {
         cursorBlink: true,
         convertEol: true,
         fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-        fontSize: 14,
-        fontWeight: 400,
+        fontSize: 12,
+        fontWeight: 600,
         scrollback: 1000,
         theme: {
           background: "#0a0a0a",

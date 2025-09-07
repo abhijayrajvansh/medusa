@@ -22,7 +22,7 @@ This document contains specific instructions for GitHub Copilot when working on 
 - Use `pnpm exec tsc --noEmit` to verify TypeScript types
 - Ensure all type errors are resolved before considering a change complete
 
-## Post Agent Completion
+## Post Agent Completion (must perform after making any code changes)
 
 - **use git cli and commit your changes in briefly**
 - use this format for commit message: `feat: <short description of the feature>`
