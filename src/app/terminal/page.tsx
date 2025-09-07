@@ -19,10 +19,16 @@ export default function TerminalPage() {
   const readyRef = useRef(false);
 
   const sendTab = () => {
+    // Schedule focus so the button click doesn't steal it
     try {
-      // Ensure terminal retains focus for continued typing
-      termRef.current?.focus?.();
+      if (typeof window !== 'undefined') {
+        // Ensure the app window is active and return focus to xterm after click
+        requestAnimationFrame(() => {
+          try { termRef.current?.focus?.(); } catch {}
+        });
+      }
     } catch {}
+    // Send a literal tab to the PTY (same as pressing the Tab key)
     try {
       wsRef.current?.send(JSON.stringify({ type: 'input', data: '\t' }));
     } catch {}
@@ -214,6 +220,10 @@ export default function TerminalPage() {
           type="button"
           className="px-3 py-1 rounded-md border border-neutral-700 bg-neutral-800 text-neutral-100 hover:bg-neutral-700"
           onClick={sendTab}
+          onMouseDown={(e) => {
+            // Prevent the button from taking focus; keep focus on terminal
+            e.preventDefault();
+          }}
           aria-label="Send Tab to terminal"
           title="Send Tab"
         >
