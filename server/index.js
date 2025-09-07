@@ -85,6 +85,44 @@ wss.on('connection', (ws) => {
         keepaliveInterval: Number(process.env.SSH_KEEPALIVE_INTERVAL_MS || 15000),
         keepaliveCountMax: Number(process.env.SSH_KEEPALIVE_COUNT_MAX || 10),
       });
+    } else if (msg.type === 'test-connection') {
+      const { config } = msg;
+      if (!config || !config.host || !config.username) {
+        ws.send(JSON.stringify({ type: 'test-error', error: 'Missing host or username' }));
+        return;
+      }
+      
+      ws.send(JSON.stringify({ type: 'test-progress', message: 'Connecting to SSH server...' }));
+      
+      const testSsh = new Client();
+      testSsh.on('ready', () => {
+        ws.send(JSON.stringify({ type: 'test-progress', message: 'Authentication successful!' }));
+        // Close the test connection immediately
+        testSsh.end();
+        ws.send(JSON.stringify({ type: 'test-success' }));
+      }).on('error', (err) => {
+        let errorMessage = String(err?.message || err);
+        // Make error messages more user-friendly
+        if (errorMessage.includes('ENOTFOUND')) {
+          errorMessage = 'Host not found. Please check the hostname/IP address.';
+        } else if (errorMessage.includes('ECONNREFUSED')) {
+          errorMessage = 'Connection refused. Please check the host and port.';
+        } else if (errorMessage.includes('ETIMEDOUT')) {
+          errorMessage = 'Connection timed out. Please check network connectivity.';
+        } else if (errorMessage.includes('Authentication')) {
+          errorMessage = 'Authentication failed. Please check your credentials.';
+        }
+        ws.send(JSON.stringify({ type: 'test-error', error: errorMessage }));
+      }).connect({
+        host: config.host,
+        port: Number(config.port) || 22,
+        username: config.username,
+        password: config.authMethod === 'password' ? config.password : undefined,
+        privateKey: config.authMethod === 'key' ? config.privateKey : undefined,
+        passphrase: config.authMethod === 'key' ? config.passphrase : undefined,
+        tryKeyboard: true,
+        readyTimeout: 15000,
+      });
     } else if (msg.type === 'input') {
       if (shellStream) shellStream.write(msg.data);
     } else if (msg.type === 'resize') {

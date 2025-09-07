@@ -15,6 +15,7 @@ export default function HomePage() {
   const [privateKey, setPrivateKey] = useState('');
   const [passphrase, setPassphrase] = useState('');
   const [connecting, setConnecting] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,6 +31,9 @@ export default function HomePage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setConnecting(true);
+    setErrorMsg(null);
+    setConnectionStatus('Connecting to WebSocket server...');
+    
     const config = {
       host: host.trim(),
       port: Number(port) || 22,
@@ -39,8 +43,83 @@ export default function HomePage() {
       privateKey: authMethod === 'key' ? privateKey : undefined,
       passphrase: authMethod === 'key' ? passphrase : undefined,
     };
-    sessionStorage.setItem('sshConfig', JSON.stringify(config));
-    router.push('/terminal');
+
+    try {
+      // Build WebSocket URL
+      const explicit = process.env.NEXT_PUBLIC_WS_URL;
+      const proto = window.location.protocol === "https:" ? "wss" : "ws";
+      const wsHost = process.env.NEXT_PUBLIC_WS_HOST || window.location.hostname;
+      const wsPort = process.env.NEXT_PUBLIC_WS_PORT || "3001";
+      const path = process.env.NEXT_PUBLIC_WS_PATH || "";
+      const wsUrl = explicit || `${proto}://${wsHost}:${wsPort}${path}`;
+      
+      const ws = new WebSocket(wsUrl);
+      
+      ws.addEventListener('open', () => {
+        setConnectionStatus('Connected to server. Testing SSH credentials...');
+        ws.send(JSON.stringify({
+          type: 'test-connection',
+          config: config
+        }));
+      });
+
+      ws.addEventListener('message', (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          
+          if (msg.type === 'test-success') {
+            setConnectionStatus('Authentication successful! Redirecting...');
+            sessionStorage.setItem('sshConfig', JSON.stringify(config));
+            setTimeout(() => {
+              router.push('/terminal');
+            }, 500);
+          } else if (msg.type === 'test-error') {
+            setConnecting(false);
+            setConnectionStatus('');
+            setErrorMsg(msg.error || 'Authentication failed');
+            ws.close();
+          } else if (msg.type === 'test-progress') {
+            setConnectionStatus(msg.message || 'Testing connection...');
+          }
+        } catch (error) {
+          setConnecting(false);
+          setConnectionStatus('');
+          setErrorMsg('Failed to parse server response');
+          ws.close();
+        }
+      });
+
+      ws.addEventListener('close', () => {
+        if (connecting) {
+          setConnecting(false);
+          setConnectionStatus('');
+          if (!errorMsg) {
+            setErrorMsg('Connection closed unexpectedly');
+          }
+        }
+      });
+
+      ws.addEventListener('error', () => {
+        setConnecting(false);
+        setConnectionStatus('');
+        setErrorMsg('Failed to connect to WebSocket server');
+      });
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        if (connecting) {
+          setConnecting(false);
+          setConnectionStatus('');
+          setErrorMsg('Connection timeout');
+          ws.close();
+        }
+      }, 30000);
+
+    } catch (error) {
+      setConnecting(false);
+      setConnectionStatus('');
+      setErrorMsg('Failed to initiate connection');
+    }
   };
 
   return (
@@ -51,6 +130,13 @@ export default function HomePage() {
             <strong>Connection failed:</strong> {errorMsg}
           </div>
           <button className="absolute right-2 top-1/2 -translate-y-1/2 text-lg px-1" onClick={() => setErrorMsg(null)} aria-label="Dismiss error">×</button>
+        </div>
+      )}
+      
+      {connecting && connectionStatus && (
+        <div className="flex items-center gap-3 p-3 rounded-xl mb-4 border border-blue-600 bg-blue-600/10 text-blue-100">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-400 border-t-transparent"></div>
+          <div className="leading-tight">{connectionStatus}</div>
         </div>
       )}
       <h1 className="text-2xl font-semibold mb-2">SSH Web Terminal</h1>
