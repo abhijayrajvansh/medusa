@@ -194,13 +194,19 @@ export default function TerminalPage() {
   }, [router]);
 
   return (
-    <div className="grid h-svh grid-rows-[auto_auto_1fr] overflow-hidden">
-      <div className="px-4 py-3 border-b border-neutral-700/60">
-        <strong>Status:</strong> {status}
-      </div>
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-neutral-700/60">
+    <div className="grid h-svh grid-rows-[auto_1fr] overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-700/60">
+        <div>
+          <strong>Status:</strong> {status}
+        </div>
         <span className="grow" />
-        <button type="button" className="px-3 py-1 rounded-md border border-red-600 bg-red-500 text-white hover:bg-red-400" onClick={() => setConfirmDisconnectOpen(true)}>Disconnect</button>
+        <button
+          type="button"
+          className="px-3 py-1 rounded-md border border-red-600 bg-red-500 text-white hover:bg-red-400"
+          onClick={() => setConfirmDisconnectOpen(true)}
+        >
+          Disconnect
+        </button>
       </div>
       <div className="h-full overflow-hidden" ref={containerRef} />
       <ConfirmReloadDialog
