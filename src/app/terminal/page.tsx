@@ -75,8 +75,9 @@ export default function TerminalPage() {
         cursorBlink: true,
         convertEol: true,
         fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-        fontSize: 12,
-        fontWeight: 600,
+        fontSize: 14,
+        fontWeight: 400,
+        scrollback: 1000,
         theme: {
           background: "#0a0a0a",
           foreground: "#f5f5f5",
@@ -107,8 +108,12 @@ export default function TerminalPage() {
       fitRef.current = fit;
       if (containerRef.current) {
         term.open(containerRef.current);
-        // Fit initially and whenever the container changes size
-        fit.fit();
+        // Use setTimeout to ensure DOM is ready before fitting
+        setTimeout(() => {
+          try {
+            fit.fit();
+          } catch {}
+        }, 100);
         if ("ResizeObserver" in window) {
           ro = new ResizeObserver(() => {
             try {
@@ -295,7 +300,7 @@ export default function TerminalPage() {
           Disconnect
         </button>
       </div>
-      <div className="flex-1 overflow-auto p-2" ref={containerRef} />
+      <div className="flex-1 overflow-hidden bg-[#0a0a0a]" ref={containerRef} />
       <AssistiveTouch onSendSeq={sendSeq} onFocusXterm={focusXtermSoon} />
       <ConfirmReloadDialog
         open={confirmOpen}
