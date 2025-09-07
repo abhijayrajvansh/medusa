@@ -275,9 +275,6 @@ export default function TerminalPage() {
   return (
     <div className="h-[90vh] flex flex-col overflow-hidden">
       <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b border-neutral-700/60 bg-neutral-900">
-        <div>
-          <strong>Status:</strong> {status}
-        </div>
         <span className="grow" />
         <button
           type="button"
@@ -301,6 +298,11 @@ export default function TerminalPage() {
         </button>
       </div>
       <div className="flex-1 overflow-hidden bg-[#0a0a0a]" ref={containerRef} />
+      <div className="sticky bottom-0 z-10 flex items-center gap-2 px-4 py-3 border-t border-neutral-700/60 bg-neutral-900">
+        <div>
+          <strong>Status:</strong> {status}
+        </div>
+      </div>
       <AssistiveTouch onSendSeq={sendSeq} onFocusXterm={focusXtermSoon} />
       <ConfirmReloadDialog
         open={confirmOpen}
