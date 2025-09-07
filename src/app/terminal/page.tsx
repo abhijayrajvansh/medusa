@@ -162,6 +162,13 @@ export default function TerminalPage() {
             term.write(msg.data);
           } else if (msg.type === "close") {
             setStatus("Session closed");
+            // Clean up session and redirect to home
+            try {
+              sessionStorage.removeItem("sshConfig");
+            } catch {}
+            setTimeout(() => {
+              router.replace("/");
+            }, 1000); // Give user a moment to see the "Session closed" message
           } else if (msg.type === "error") {
             const errMsg = String(msg.error || "unknown error");
             setStatus("Error: " + errMsg);
@@ -184,6 +191,13 @@ export default function TerminalPage() {
           );
         } else {
           setStatus("Disconnected");
+          // Clean up session and redirect to home after disconnection
+          try {
+            sessionStorage.removeItem("sshConfig");
+          } catch {}
+          setTimeout(() => {
+            router.replace("/");
+          }, 1500); // Give user time to see the disconnected message
         }
       });
       ws.addEventListener("error", () => {
