@@ -1,103 +1,109 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+type AuthMethod = 'password' | 'key';
+
+export default function HomePage() {
+  const router = useRouter();
+  const [host, setHost] = useState('');
+  const [port, setPort] = useState(22);
+  const [username, setUsername] = useState('');
+  const [authMethod, setAuthMethod] = useState<AuthMethod>('password');
+  const [password, setPassword] = useState('');
+  const [privateKey, setPrivateKey] = useState('');
+  const [passphrase, setPassphrase] = useState('');
+  const [connecting, setConnecting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const msg = sessionStorage.getItem('sshError');
+      if (msg) {
+        setErrorMsg(msg);
+        sessionStorage.removeItem('sshError');
+      }
+    } catch {}
+  }, []);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setConnecting(true);
+    const config = {
+      host: host.trim(),
+      port: Number(port) || 22,
+      username: username.trim(),
+      authMethod,
+      password: authMethod === 'password' ? password : undefined,
+      privateKey: authMethod === 'key' ? privateKey : undefined,
+      passphrase: authMethod === 'key' ? passphrase : undefined,
+    };
+    sessionStorage.setItem('sshConfig', JSON.stringify(config));
+    router.push('/terminal');
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <main className="max-w-[720px] mx-auto p-8">
+      {errorMsg && (
+        <div className="relative flex items-center gap-3 p-3 pr-10 rounded-xl mb-4 border border-red-900 bg-red-900 text-red-100 shadow-[0_8px_20px_rgba(153,27,27,0.25)]" role="alert">
+          <div className="leading-tight">
+            <strong>Connection failed:</strong> {errorMsg}
+          </div>
+          <button className="absolute right-2 top-1/2 -translate-y-1/2 text-lg px-1" onClick={() => setErrorMsg(null)} aria-label="Dismiss error">×</button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      )}
+      <h1 className="text-2xl font-semibold mb-2">SSH Web Terminal</h1>
+      <p className="p-3 border border-dashed border-neutral-500/40 rounded-md mb-4 text-sm">
+        Demo only. Credentials are sent directly from your browser to the local Node WebSocket server. Do not use for production without hardening.
+      </p>
+      <form onSubmit={onSubmit} className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="host" className="block mb-1">Host/IP</label>
+            <input id="host" placeholder="192.168.1.10" value={host} onChange={e=>setHost(e.target.value)} required className="w-full px-3 py-2 rounded-md border border-neutral-500/30 bg-transparent" />
+          </div>
+          <div>
+            <label htmlFor="port" className="block mb-1">Port</label>
+            <input id="port" type="number" min={1} max={65535} value={port} onChange={e=>setPort(Number(e.target.value))} className="w-full px-3 py-2 rounded-md border border-neutral-500/30 bg-transparent" />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="username" className="block mb-1">Username</label>
+          <input id="username" placeholder="user" value={username} onChange={e=>setUsername(e.target.value)} required className="w-full px-3 py-2 rounded-md border border-neutral-500/30 bg-transparent" />
+        </div>
+
+        <div>
+          <label htmlFor="auth" className="block mb-1">Authentication</label>
+          <select id="auth" value={authMethod} onChange={e=>setAuthMethod(e.target.value as AuthMethod)} className="w-full px-3 py-2 rounded-md border border-neutral-500/30 bg-transparent">
+            <option value="password">Password</option>
+            <option value="key">Private Key</option>
+          </select>
+        </div>
+
+        {authMethod === 'password' ? (
+          <div>
+            <label htmlFor="password" className="block mb-1">Password</label>
+            <input id="password" type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-3 py-2 rounded-md border border-neutral-500/30 bg-transparent" />
+          </div>
+        ) : (
+          <>
+            <div>
+              <label htmlFor="privateKey" className="block mb-1">Private Key (PEM/OpenSSH)</label>
+              <textarea id="privateKey" rows={8} placeholder={"-----BEGIN OPENSSH PRIVATE KEY-----\n..."} value={privateKey} onChange={e=>setPrivateKey(e.target.value)} className="w-full px-3 py-2 rounded-md border border-neutral-500/30 bg-transparent"></textarea>
+            </div>
+            <div>
+              <label htmlFor="passphrase" className="block mb-1">Passphrase (optional)</label>
+              <input id="passphrase" type="password" value={passphrase} onChange={e=>setPassphrase(e.target.value)} className="w-full px-3 py-2 rounded-md border border-neutral-500/30 bg-transparent" />
+            </div>
+          </>
+        )}
+
+        <button type="submit" disabled={connecting} className="mt-2 inline-flex items-center justify-center px-4 py-2 rounded-md bg-blue-600 text-white border border-blue-500 disabled:opacity-60">
+          {connecting ? 'Connecting…' : 'Connect'}
+        </button>
+      </form>
+    </main>
   );
 }
