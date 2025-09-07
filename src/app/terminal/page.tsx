@@ -273,7 +273,7 @@ export default function TerminalPage() {
   }, [router]);
 
   return (
-    <div className="h-[90vh] flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden">
       <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b border-neutral-700/60 bg-neutral-900">
         <span className="grow" />
         <button
